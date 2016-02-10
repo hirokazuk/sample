@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ローカル用ビルドxml -->
+<project basedir=".." default="release" name="deployer">
+
+	<target name="release">
+		<property name="war.path" value="${basedir}/build/${appname}.war"/>
+		<antcall target="war"/>
+		<antcall target="deploy"/>
+		<tstamp >
+			<format property="NOW" pattern="yyyyMMddHHmmss" />
+		</tstamp>
+		<dirname file="${war.path}" property="war.dirname" />
+		<copy file="${war.path}" tofile="${war.dirname}/${appname}-${NOW}.war" preservelastmodified="true" failonerror="false" />
+	</target>
+
+	<target name="deploy" depends="deployinit,-stop,-undeploy,-deploy"/>
+	<target name="deployinit">
+		
+		<input message="input target ip" addproperty="server" defaultvalue=""/>
+		<input message="input target port" addproperty="port" defaultvalue=""/>
+		
+		<property name="manager.id" value="/manager"/>
+		<property name="user" value="system"/>
+		<property name="password" value="manager"/>
+		<property name="app.id" value="${appname}"/>
+		<property name="mgr.context.path" value="/${app.id}" />
+
+		<echo message="createUrl"/>
+		<property name="url" value="http://${server}:${port}${manager.id}/text"/>
+		<echo message="[${url}]に処理を要求しています。" />
+
+
+	</target>
+
+	<!-- ant用ライブラリパス -->
+	<path id="antlib.class.path">
+		<fileset dir="./etc/deployerlib">
+		</fileset>
+	</path>
+
+	<!-- タスクの定義 -->
+	<taskdef name="deploy"    classname="org.apache.catalina.ant.DeployTask" classpathref="antlib.class.path"/>
+	<taskdef name="undeploy"  classname="org.apache.catalina.ant.UndeployTask" classpathref="antlib.class.path"/>
+	<taskdef name="list"      classname="org.apache.catalina.ant.ListTask" classpathref="antlib.class.path"/>
+	<taskdef name="reload"    classname="org.apache.catalina.ant.ReloadTask" classpathref="antlib.class.path"/>
+	<taskdef name="resources" classname="org.apache.catalina.ant.ResourcesTask" classpathref="antlib.class.path"/>
+	<taskdef name="start"     classname="org.apache.catalina.ant.StartTask" classpathref="antlib.class.path"/>
+	<taskdef name="stop"      classname="org.apache.catalina.ant.StopTask" classpathref="antlib.class.path"/>
+
+	<!-- 配備 -->
+	<target name="-deploy" depends="context.status" >
+		<deploy url="${url}" username="${user}" password="${password}" path="/${app.id}" war="${war.path}" />
+	</target>
+
+	<!-- 配備解除 -->
+	<target name="-undeploy" depends="context.status"  if="context.undeployable">
+		<undeploy url="${url}" username="${user}" password="${password}" path="/${app.id}" />
+	</target>
+
+	<!-- 停止 -->
+	<target name="-stop" depends="context.status"  if="context.running">
+		<stop url="${url}" username="${user}" password="${password}" path="/${app.id}" />
+	</target>
+
+	<target name="context.status">
+		<property name="running" value="${mgr.context.path}:running" />
+		<property name="stopped" value="${mgr.context.path}:stopped" />
+		<list url="${url}" outputproperty="ctx.status" username="${user}" password="${password}"/>
+		<condition property="context.running">
+			<contains string="${ctx.status}" substring="${running}" />
+		</condition>
+		<condition property="context.stopped">
+			<contains string="${ctx.status}" substring="${stopped}" />
+		</condition>
+		<condition property="context.notInstalled">
+			<and>
+				<isfalse value="${context.running}" />
+				<isfalse value="${context.stopped}" />
+			</and>
+		</condition>
+		<condition property="context.deployable">
+			<or>
+				<istrue value="${context.notInstalled}" />
+				<and>
+					<istrue value="${context.running}" />
+					<istrue value="${mgr.update}" />
+				</and>
+				<and>
+					<istrue value="${context.stopped}" />
+					<istrue value="${mgr.update}" />
+				</and>
+			</or>
+		</condition>
+		<condition property="context.undeployable">
+			<or>
+				<istrue value="${context.running}" />
+				<istrue value="${context.stopped}" />
+			</or>
+		</condition>
+	</target>
+</project>

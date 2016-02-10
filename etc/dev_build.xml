@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ローカル用ビルドxml -->
+<project basedir=".." default="release" name="simpledevbuild">
+	<!-- antのプロパティは不変であるため、適用させたいプロパティはimportの前に記述する -->
+	<!-- ※ローカル用は、test_build.xmlをインポートした方が良いのかもしれない。 -->
+	<import file="../etc/build.xml" />
+	
+	
+	<!-- サーバへ直リリースするターゲットが定義してある -->
+	<import file="../etc/deployer.xml" />
+	
+	<target name="localoriginal">
+		<echo>dev_build.xml</echo>
+	</target>
+</project>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="simple" default="war" basedir="..">
+	<property name="encoding" value="MS932" />
+	
+	<!-- ディレクトリパス定義など -->
+	<property name="appname" value="simple" description="アプリ名=war名"/>
+	<property name="warname" value="${appname}" />
+
+		
+	
+	<!-- ディレクトリパス定義など -->
+	<property name="target.dir" value="${basedir}/target" />
+	<property name="build.dir" value="${basedir}/build" />
+	<property name="src.dir" value="${basedir}/src/main/java" />
+	<property name="webapp.dir" value="${basedir}/src/main/webapp" />
+	<property name="lib.dir" value="${basedir}/lib" />
+	<property name="compile.lib.dir"    value="${lib.dir}/compile" />
+	<property name="provided.lib.dir"   value="${lib.dir}/provided" />
+	<property name="additional.lib.dir" value="${basedir}/libadditional" />
+	
+	
+	<!-- ライブラリパス -->
+	<path id="build.classpath">
+		<fileset dir="${provided.lib.dir}"   includes="**/*.jar" />
+		<fileset dir="${compile.lib.dir}"    includes="**/*.jar" />
+		<fileset dir="${additional.lib.dir}" includes="**/*.jar" />
+	</path>
+	
+	<!-- warにパッキング -->
+	<target name="war" depends="compile" >
+		<copy todir="${target.dir}" preservelastmodified="true">
+			<fileset dir="${webapp.dir}/">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<delete file="${warname}.war" />
+		<war destfile="${build.dir}/${warname}.war" basedir="target" needxmlfile="false">
+			<zipfileset dir="etc" includes="context.xml"  prefix="META-INF" />
+			<lib dir="${compile.lib.dir}" includes="*.jar"/>
+			<lib dir="${additional.lib.dir}" includes="*.jar"/>
+		</war>
+	</target>
+
+	<!-- テンポラリディレクトリの作成 -->
+	<target name="init" depends="clean">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${target.dir}" />
+	</target>
+	
+	<!-- テンポラリディレクトリの削除 -->
+	<target name="clean">
+		<delete dir="${build.dir}" />
+		<delete dir="${target.dir}" />
+	</target>
+	
+	<!-- コンパイル -->
+	<target name="compile" depends="init">
+		<mkdir dir="${target.dir}/WEB-INF/classes" />
+		<javac destdir="${target.dir}/WEB-INF/classes" debug="true" source="1.8" target="1.8" fork="true" encoding="${encoding}">
+			<classpath refid="build.classpath"/>
+			<src path="${src.dir}" />
+			<include name="**/*.java" />
+		</javac>
+	</target>
+</project>
